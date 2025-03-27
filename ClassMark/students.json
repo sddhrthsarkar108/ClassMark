@@ -1,0 +1,42 @@
+[
+    {
+        "name": "John Doe",
+        "rollNumber": "101"
+    },
+    {
+        "name": "Jane Smith",
+        "rollNumber": "102"
+    },
+    {
+        "name": "Bob Johnson",
+        "rollNumber": "103"
+    },
+    {
+        "name": "Emily Davis",
+        "rollNumber": "104"
+    },
+    {
+        "name": "Michael White",
+        "rollNumber": "105"
+    },
+    {
+        "name": "Sarah Brown",
+        "rollNumber": "106"
+    },
+    {
+        "name": "David Wilson",
+        "rollNumber": "107"
+    },
+    {
+        "name": "Lisa Taylor",
+        "rollNumber": "108"
+    },
+    {
+        "name": "James Miller",
+        "rollNumber": "109"
+    },
+    {
+        "name": "Jennifer Garcia",
+        "rollNumber": "110"
+    }
+] 

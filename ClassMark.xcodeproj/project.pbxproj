@@ -12,6 +12,19 @@
 		62F1A6522BAFE00000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62F1A6512BAFE00000000001 /* ContentView.swift */; };
 		F1306C902D9586C40043700E /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 62F1A6582BAFE00100000001 /* LaunchScreen.storyboard */; };
 		F1306C912D9586C40043700F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1306C922D9586C40043700F /* Assets.xcassets */; };
+		F1306C932D9586C40043701F /* AttendanceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306C942D9586C40043701F /* AttendanceViewModel.swift */; };
+		F1306C952D9586C40043702F /* Student.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306C962D9586C40043702F /* Student.swift */; };
+		F1306C972D9586C40043703F /* AttendanceRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306C982D9586C40043703F /* AttendanceRecord.swift */; };
+		F1306C992D9586C40043704F /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306C9A2D9586C40043704F /* DataManager.swift */; };
+		F1306C9B2D9586C40043705F /* StringMatching.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306C9C2D9586C40043705F /* StringMatching.swift */; };
+		F1306C9D2D9586C40043706F /* TextRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306C9E2D9586C40043706F /* TextRecognitionService.swift */; };
+		F1306C9F2D9586C40043707F /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306CA02D9586C40043707F /* OpenAIService.swift */; };
+		F1306CA12D9586C40043708F /* ImagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306CA22D9586C40043708F /* ImagePickerView.swift */; };
+		F1306CA32D9586C40043709F /* AttendanceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306CA42D9586C40043709F /* AttendanceListView.swift */; };
+		F1306CA52D9586C4004370AF /* ImageProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306CA62D9586C4004370AF /* ImageProcessingView.swift */; };
+		F1306CA72D9586C4004370BF /* AttendanceHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306CA82D9586C4004370BF /* AttendanceHistoryView.swift */; };
+		F1306CA92D9586C4004370CF /* ClassMarkImports.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1306CAA2D9586C4004370CF /* ClassMarkImports.swift */; };
+		F1306CAB2D9586C4004370DF /* students.json in Resources */ = {isa = PBXBuildFile; fileRef = F1306CAC2D9586C4004370DF /* students.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +35,19 @@
 		62F1A6582BAFE00100000001 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		62F1A65A2BAFE00100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F1306C922D9586C40043700F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F1306C942D9586C40043701F /* AttendanceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceViewModel.swift; sourceTree = "<group>"; };
+		F1306C962D9586C40043702F /* Student.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Student.swift; sourceTree = "<group>"; };
+		F1306C982D9586C40043703F /* AttendanceRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceRecord.swift; sourceTree = "<group>"; };
+		F1306C9A2D9586C40043704F /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
+		F1306C9C2D9586C40043705F /* StringMatching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringMatching.swift; sourceTree = "<group>"; };
+		F1306C9E2D9586C40043706F /* TextRecognitionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextRecognitionService.swift; sourceTree = "<group>"; };
+		F1306CA02D9586C40043707F /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
+		F1306CA22D9586C40043708F /* ImagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePickerView.swift; sourceTree = "<group>"; };
+		F1306CA42D9586C40043709F /* AttendanceListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceListView.swift; sourceTree = "<group>"; };
+		F1306CA62D9586C4004370AF /* ImageProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessingView.swift; sourceTree = "<group>"; };
+		F1306CA82D9586C4004370BF /* AttendanceHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceHistoryView.swift; sourceTree = "<group>"; };
+		F1306CAA2D9586C4004370CF /* ClassMarkImports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassMarkImports.swift; sourceTree = "<group>"; };
+		F1306CAC2D9586C4004370DF /* students.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = students.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +83,19 @@
 				62F1A64D2BAFE00000000001 /* AppDelegate.swift */,
 				62F1A64F2BAFE00000000001 /* SceneDelegate.swift */,
 				62F1A6512BAFE00000000001 /* ContentView.swift */,
+				F1306C942D9586C40043701F /* AttendanceViewModel.swift */,
+				F1306CA22D9586C40043708F /* ImagePickerView.swift */,
+				F1306CA42D9586C40043709F /* AttendanceListView.swift */,
+				F1306CA62D9586C4004370AF /* ImageProcessingView.swift */,
+				F1306CA82D9586C4004370BF /* AttendanceHistoryView.swift */,
+				F1306C962D9586C40043702F /* Student.swift */,
+				F1306C982D9586C40043703F /* AttendanceRecord.swift */,
+				F1306C9A2D9586C40043704F /* DataManager.swift */,
+				F1306C9C2D9586C40043705F /* StringMatching.swift */,
+				F1306C9E2D9586C40043706F /* TextRecognitionService.swift */,
+				F1306CA02D9586C40043707F /* OpenAIService.swift */,
+				F1306CAA2D9586C4004370CF /* ClassMarkImports.swift */,
+				F1306CAC2D9586C4004370DF /* students.json */,
 				F1306C922D9586C40043700F /* Assets.xcassets */,
 				62F1A6582BAFE00100000001 /* LaunchScreen.storyboard */,
 				62F1A65A2BAFE00100000001 /* Info.plist */,
@@ -124,6 +163,7 @@
 			files = (
 				F1306C902D9586C40043700E /* LaunchScreen.storyboard in Resources */,
 				F1306C912D9586C40043700F /* Assets.xcassets in Resources */,
+				F1306CAB2D9586C4004370DF /* students.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +177,18 @@
 				62F1A64E2BAFE00000000001 /* AppDelegate.swift in Sources */,
 				62F1A6502BAFE00000000001 /* SceneDelegate.swift in Sources */,
 				62F1A6522BAFE00000000001 /* ContentView.swift in Sources */,
+				F1306C932D9586C40043701F /* AttendanceViewModel.swift in Sources */,
+				F1306C952D9586C40043702F /* Student.swift in Sources */,
+				F1306C972D9586C40043703F /* AttendanceRecord.swift in Sources */,
+				F1306C992D9586C40043704F /* DataManager.swift in Sources */,
+				F1306C9B2D9586C40043705F /* StringMatching.swift in Sources */,
+				F1306C9D2D9586C40043706F /* TextRecognitionService.swift in Sources */,
+				F1306C9F2D9586C40043707F /* OpenAIService.swift in Sources */,
+				F1306CA12D9586C40043708F /* ImagePickerView.swift in Sources */,
+				F1306CA32D9586C40043709F /* AttendanceListView.swift in Sources */,
+				F1306CA52D9586C4004370AF /* ImageProcessingView.swift in Sources */,
+				F1306CA72D9586C4004370BF /* AttendanceHistoryView.swift in Sources */,
+				F1306CA92D9586C4004370CF /* ClassMarkImports.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

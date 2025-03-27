@@ -20,6 +20,10 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>ClassMark needs access to your camera to capture attendance sheets.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ClassMark needs access to your photo library to select attendance sheets.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

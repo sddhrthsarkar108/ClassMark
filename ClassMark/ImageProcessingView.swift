@@ -40,7 +40,10 @@ struct ImageProcessingView: View {
                         Button("Continue with Current Results") {
                             viewModel.showOpenAIOption = false
                             viewModel.processingComplete = true
-                            navigateToAttendanceList = true
+                            // Add a longer delay to ensure all UI updates and transitions are complete
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                navigateToAttendanceList = true
+                            }
                         }
                         .buttonStyle(.bordered)
                     }
@@ -92,14 +95,17 @@ struct ImageProcessingView: View {
         .onChange(of: viewModel.useOpenAI) { useOpenAI in
             if !useOpenAI && viewModel.errorMessage == nil && viewModel.processingComplete {
                 print("OpenAI processing complete, navigating to attendance list")
-                navigateToAttendanceList = true
+                // Add a longer delay to ensure all UI updates and transitions are complete
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    navigateToAttendanceList = true
+                }
             }
         }
         .onChange(of: viewModel.processingComplete) { complete in
             if complete && !viewModel.showOpenAIOption && viewModel.errorMessage == nil {
                 print("Processing complete, navigating to attendance list")
-                // Add a slight delay to ensure UI updates complete
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                // Add a longer delay to ensure all UI updates and transitions are complete
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     navigateToAttendanceList = true
                 }
             }
@@ -108,13 +114,16 @@ struct ImageProcessingView: View {
         .onAppear {
             // Debug print to verify this view is appearing
             print("ImageProcessingView appeared")
+            
+            // Reset navigation state when view appears
+            navigateToAttendanceList = false
         }
         .onReceive(viewModel.$isProcessing) { isProcessing in
             print("Processing status changed: \(isProcessing)")
             if !isProcessing && !viewModel.showOpenAIOption && viewModel.errorMessage == nil && viewModel.selectedImage != nil && viewModel.processingComplete {
                 print("Navigating to attendance list")
-                // Add a slight delay to ensure UI updates complete
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                // Add a longer delay to ensure all UI updates and transitions are complete
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     navigateToAttendanceList = true
                 }
             }

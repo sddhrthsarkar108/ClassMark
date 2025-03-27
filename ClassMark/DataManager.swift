@@ -57,6 +57,14 @@ class DataManager {
     
     // MARK: - Attendance Management
     
+    // Clear all attendance records - for debugging purposes
+    func clearAllAttendanceRecords() {
+        print("DataManager: Clearing all attendance records from UserDefaults")
+        UserDefaults.standard.removeObject(forKey: attendanceRecordsKey)
+        UserDefaults.standard.synchronize()
+        print("DataManager: All attendance records have been cleared")
+    }
+    
     func getAttendanceRecords() -> [AttendanceRecord] {
         guard let data = UserDefaults.standard.data(forKey: attendanceRecordsKey) else {
             print("No attendance records found in UserDefaults")
@@ -80,28 +88,29 @@ class DataManager {
         var existingRecords = getAttendanceRecords()
         print("DataManager: Found \(existingRecords.count) existing records")
         
-        // Check for duplicates (same student, same date)
-        let newRecordsSet = Set(records.map { record -> String in
-            let dateStr = getDateString(from: record.date)
-            return "\(record.studentRollNumber)-\(dateStr)"
-        })
-        
-        // Filter out existing records that would be duplicates
-        existingRecords = existingRecords.filter { record -> Bool in
-            let dateStr = getDateString(from: record.date)
-            let key = "\(record.studentRollNumber)-\(dateStr)"
-            return !newRecordsSet.contains(key)
+        // Group records by date for better logging
+        let calendar = Calendar.current
+        let newRecordsByDate = Dictionary(grouping: records) { record -> String in
+            return getDateString(from: record.date)
         }
         
-        print("DataManager: After removing potential duplicates, keeping \(existingRecords.count) existing records")
+        // Get the unique dates being updated
+        let updatingDates = Set(records.map { calendar.startOfDay(for: $0.date) })
+        print("DataManager: Updating records for dates: \(updatingDates.map { getDateString(from: $0) })")
         
-        // Add new records
-        existingRecords.append(contentsOf: records)
-        print("DataManager: Total records after adding new ones: \(existingRecords.count)")
+        // Keep records for dates not being updated
+        let recordsToKeep = existingRecords.filter { record in
+            !updatingDates.contains(calendar.startOfDay(for: record.date))
+        }
+        print("DataManager: Keeping \(recordsToKeep.count) records that are for other dates")
         
-        // Keep only the last 30 days of records (updated from 7 days)
+        // Add the new/updated records
+        let finalRecords = recordsToKeep + records
+        print("DataManager: Final record count: \(finalRecords.count)")
+        
+        // Keep only the last 30 days of records
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-        let filteredRecords = existingRecords.filter { $0.date >= thirtyDaysAgo }
+        let filteredRecords = finalRecords.filter { $0.date >= thirtyDaysAgo }
         print("DataManager: After filtering for last 30 days, keeping \(filteredRecords.count) records")
         
         do {
@@ -112,6 +121,16 @@ class DataManager {
             // Force synchronize to ensure data is saved immediately
             UserDefaults.standard.synchronize()
             print("DataManager: UserDefaults synchronized")
+            
+            // Verify records were properly saved
+            let savedRecords = getAttendanceRecords()
+            print("DataManager: Verified \(savedRecords.count) total records saved")
+            
+            // Verify each updated date
+            for date in updatingDates {
+                let dateRecords = savedRecords.filter { calendar.isDate($0.date, inSameDayAs: date) }
+                print("DataManager: Verified \(dateRecords.count) records for date \(getDateString(from: date))")
+            }
             
         } catch {
             print("Error encoding attendance records: \(error)")

@@ -5,6 +5,8 @@ struct AttendanceListView: View {
     @State private var showingSaveConfirmation = false
     @State private var saveButtonTapped = false
     @State private var showingCompletionOptions = false
+    @State private var isViewFullyLoaded = false
+    @State private var pendingSaveCompletion = false
     
     var body: some View {
         List {
@@ -62,8 +64,8 @@ struct AttendanceListView: View {
                     viewModel.saveAttendance()
                     print("Attendance saved")
                     
-                    // Show completion options dialog
-                    showingCompletionOptions = true
+                    // Set the pending flag to show the dialog once it's safe
+                    pendingSaveCompletion = true
                 }) {
                     HStack {
                         Spacer()
@@ -98,8 +100,8 @@ struct AttendanceListView: View {
                     viewModel.saveAttendance()
                     print("Attendance saved")
                     
-                    // Show completion options dialog
-                    showingCompletionOptions = true
+                    // Set the pending flag to show the dialog once it's safe
+                    pendingSaveCompletion = true
                 }) {
                     Text(viewModel.isUpdatingExistingRecords ? "Update" : "Save")
                         .bold()
@@ -151,10 +153,36 @@ struct AttendanceListView: View {
             print("AttendanceListView appeared")
             // Reset the save button state
             saveButtonTapped = false
+            
+            // Mark that the view is fully loaded after a short delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                isViewFullyLoaded = true
+                
+                // If there's a pending save completion, show the dialog now
+                if pendingSaveCompletion {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showingCompletionOptions = true
+                        pendingSaveCompletion = false
+                    }
+                }
+            }
+        }
+        .onChange(of: pendingSaveCompletion) { isPending in
+            if isPending && isViewFullyLoaded {
+                // Only show the completion dialog if the view is fully loaded
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    showingCompletionOptions = true
+                    pendingSaveCompletion = false
+                }
+            }
+        }
+        .onDisappear {
+            // Reset view state when disappearing
+            isViewFullyLoaded = false
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AttendanceSaved"))) { notification in
-            // Show completion options automatically when attendance is saved
-            showingCompletionOptions = true
+            // Set the pending flag instead of showing the dialog directly
+            pendingSaveCompletion = true
         }
     }
     

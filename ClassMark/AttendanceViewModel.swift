@@ -99,6 +99,16 @@ class AttendanceViewModel: ObservableObject {
         errorMessage = nil
         processingComplete = false
         
+        // Always reset all attendance statuses to absent before processing
+        attendanceStatus = Dictionary(uniqueKeysWithValues: students.map { ($0.rollNumber, false) })
+        print("Reset all attendance statuses before processing new image")
+        
+        // Mark if we're updating existing records
+        let isUpdating = dataManager.hasAttendanceRecords(for: attendanceDate)
+        if isUpdating {
+            print("Processing image for date with existing records - will override previous attendance")
+        }
+        
         textRecognitionService.recognizeText(from: image) { [weak self] result in
             guard let self = self else { return }
             
@@ -110,7 +120,7 @@ class AttendanceViewModel: ObservableObject {
                     print("Extracted text: \(extractedText)")
                     let matchResult = self.textRecognitionService.matchNamesWithStudents(extractedTexts: extractedText)
                     
-                    // Update attendance status
+                    // Update attendance status - only students found in the image will be marked present
                     for (rollNumber, confidence) in matchResult {
                         self.attendanceStatus[rollNumber] = true
                     }
@@ -119,6 +129,10 @@ class AttendanceViewModel: ObservableObject {
                     let presentStudentNames = self.students
                         .filter { self.attendanceStatus[$0.rollNumber] == true }
                         .map { $0.name }
+                    
+                    print("Students marked present from image: \(presentStudentNames)")
+                    print("Total students marked present: \(presentStudentNames.count)")
+                    print("Total students marked absent: \(self.students.count - presentStudentNames.count)")
                     
                     NotificationCenter.default.post(
                         name: NSNotification.Name("MatchedStudents"),
@@ -130,8 +144,8 @@ class AttendanceViewModel: ObservableObject {
                     // Check if we should suggest using OpenAI
                     self.showOpenAIOption = self.textRecognitionService.shouldUseFallback(matchResult: matchResult)
                     
-                    // Check if we're updating existing records
-                    self.checkExistingRecordsForDate(self.attendanceDate)
+                    // We're definitely updating records for this date now
+                    self.isUpdatingExistingRecords = isUpdating
                     
                 case .failure(let error):
                     print("Text recognition error: \(error)")
@@ -154,6 +168,16 @@ class AttendanceViewModel: ObservableObject {
         useOpenAI = true
         processingComplete = false
         
+        // Always reset all attendance statuses to absent before processing
+        attendanceStatus = Dictionary(uniqueKeysWithValues: students.map { ($0.rollNumber, false) })
+        print("Reset all attendance statuses before processing with OpenAI")
+        
+        // Mark if we're updating existing records
+        let isUpdating = dataManager.hasAttendanceRecords(for: attendanceDate)
+        if isUpdating {
+            print("Processing image with OpenAI for date with existing records - will override previous attendance")
+        }
+        
         openAIService.recognizeNamesFromImage(image) { [weak self] result in
             guard let self = self else { return }
             
@@ -175,20 +199,24 @@ class AttendanceViewModel: ObservableObject {
                         }
                     }
                     
-                    self.processingComplete = true
-                    
                     // Post notification with matched students from OpenAI
                     let presentStudentNames = self.students
                         .filter { self.attendanceStatus[$0.rollNumber] == true }
                         .map { $0.name }
+                    
+                    print("Students marked present from OpenAI: \(presentStudentNames)")
+                    print("Total students marked present: \(presentStudentNames.count)")
+                    print("Total students marked absent: \(self.students.count - presentStudentNames.count)")
                     
                     NotificationCenter.default.post(
                         name: NSNotification.Name("MatchedStudents"),
                         object: presentStudentNames
                     )
                     
-                    // Check if we're updating existing records
-                    self.checkExistingRecordsForDate(self.attendanceDate)
+                    self.processingComplete = true
+                    
+                    // We're definitely updating records for this date now
+                    self.isUpdatingExistingRecords = isUpdating
                     
                 case .failure(let error):
                     print("OpenAI error: \(error)")
@@ -196,6 +224,31 @@ class AttendanceViewModel: ObservableObject {
                 }
                 
                 self.useOpenAI = false
+            }
+        }
+    }
+    
+    // Handle new image selection with proper state reset
+    func handleNewImageSelection(_ newImage: UIImage?) {
+        selectedImage = newImage
+        
+        if newImage != nil {
+            // Reset processing state when a new image is selected
+            isProcessing = false
+            errorMessage = nil
+            processingComplete = false
+            showOpenAIOption = false
+            useOpenAI = false
+            
+            // Always reset all attendance statuses to absent when a new image is selected
+            // This ensures any previous records don't interfere with the new image processing
+            attendanceStatus = Dictionary(uniqueKeysWithValues: students.map { ($0.rollNumber, false) })
+            print("Reset all attendance statuses to absent for new image selection")
+            
+            // Check if we're updating existing records
+            isUpdatingExistingRecords = dataManager.hasAttendanceRecords(for: attendanceDate)
+            if isUpdatingExistingRecords {
+                print("New image selected for date with existing records - status reset, existing records will be updated")
             }
         }
     }

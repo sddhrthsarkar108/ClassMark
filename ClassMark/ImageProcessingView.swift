@@ -6,63 +6,110 @@ struct ImageProcessingView: View {
     
     var body: some View {
         VStack {
+            // Top spacing
+            Spacer().frame(height: 20)
+            
+            // Image Preview Area
             if let image = viewModel.selectedImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
                     .frame(maxHeight: 300)
                     .cornerRadius(12)
-                    .padding()
+                    .padding(.horizontal)
             }
             
+            // Processing States
             if viewModel.isProcessing {
-                ProgressView("Processing image...")
-                    .padding()
-            } else if viewModel.showOpenAIOption {
+                // Processing state
                 VStack(spacing: 16) {
-                    if let errorMessage = viewModel.errorMessage {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .multilineTextAlignment(.center)
-                            .padding()
-                    }
+                    ProgressView("Processing image...")
+                        .padding(.top, 24)
                     
-                    Text("Local text recognition may not have captured all names. Would you like to try OpenAI for better accuracy?")
+                    Text("Please wait while we analyze the image...")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
-                        .padding()
+                        .padding(.horizontal)
+                }
+                .padding(.vertical, 20)
+            } else if viewModel.showOpenAIOption {
+                // OpenAI option
+                VStack(spacing: 16) {
+                    Text("Recognition Results")
+                        .font(.headline)
+                        .padding(.top, 20)
                     
-                    HStack(spacing: 20) {
-                        Button("Use OpenAI") {
-                            viewModel.processWithOpenAI()
-                        }
-                        .buttonStyle(.borderedProminent)
+                    if viewModel.isOpenAIEnabled {
+                        Text("Using OpenAI for better text recognition...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
                         
-                        Button("Continue with Current Results") {
-                            viewModel.showOpenAIOption = false
-                            viewModel.processingComplete = true
-                            // Add a longer delay to ensure all UI updates and transitions are complete
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                navigateToAttendanceList = true
+                        ProgressView()
+                            .padding(.vertical, 10)
+                    } else {
+                        Text("Local text recognition may not have captured all names. Would you like to try OpenAI for better accuracy?")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                        
+                        HStack(spacing: 20) {
+                            Button("Use OpenAI") {
+                                viewModel.processWithOpenAI()
                             }
+                            .buttonStyle(.borderedProminent)
+                            
+                            Button("Continue with Current Results") {
+                                viewModel.showOpenAIOption = false
+                                viewModel.processingComplete = true
+                                
+                                // Simple navigation without animation
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    navigateToAttendanceList = true
+                                }
+                            }
+                            .buttonStyle(.bordered)
                         }
-                        .buttonStyle(.bordered)
+                        .padding(.top, 8)
                     }
+                    
+                    Text("Enable OpenAI for OCR in Settings to use automatically.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 8)
+                        .padding(.bottom, 20)
                 }
-                .padding()
             } else if viewModel.errorMessage != nil {
-                Text(viewModel.errorMessage ?? "An error occurred")
-                    .foregroundColor(.red)
-                    .padding()
-                
-                Button("Try Again") {
-                    viewModel.selectedImage = nil
-                    viewModel.errorMessage = nil
+                // Error state
+                VStack(spacing: 16) {
+                    Text("Error")
+                        .font(.headline)
+                        .foregroundColor(.red)
+                        .padding(.top, 20)
+                    
+                    Text(viewModel.errorMessage ?? "Unknown error occurred")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                    
+                    Button("Try Again") {
+                        viewModel.selectedImage = nil
+                        viewModel.errorMessage = nil
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.vertical, 8)
                 }
-                .buttonStyle(.bordered)
-                .padding()
-            } else {
-                // Show process button when image is selected but not yet processed
-                if viewModel.selectedImage != nil && !navigateToAttendanceList {
+            } else if !navigateToAttendanceList {
+                // Default state - show process button
+                VStack(spacing: 16) {
+                    Text("Ready to Process")
+                        .font(.headline)
+                        .padding(.top, 20)
+                    
                     Button(action: {
                         viewModel.processImage()
                     }) {
@@ -74,15 +121,19 @@ struct ImageProcessingView: View {
                             .background(Color.blue)
                             .cornerRadius(10)
                     }
-                    .padding()
+                    .padding(.horizontal, 20)
                     
                     Button("Choose Different Image") {
                         viewModel.selectedImage = nil
                         viewModel.errorMessage = nil
                     }
-                    .padding()
+                    .font(.subheadline)
+                    .foregroundColor(.blue)
+                    .padding(.bottom, 20)
                 }
             }
+            
+            Spacer()
             
             NavigationLink(
                 destination: AttendanceListView(viewModel: viewModel),
@@ -92,43 +143,42 @@ struct ImageProcessingView: View {
             }
             .hidden()
         }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Process Attendance")
+                    .font(.title2)
+                    .fontWeight(.bold)
+            }
+        }
         .onChange(of: viewModel.useOpenAI) { useOpenAI in
             if !useOpenAI && viewModel.errorMessage == nil && viewModel.processingComplete {
-                print("OpenAI processing complete, navigating to attendance list")
-                // Add a longer delay to ensure all UI updates and transitions are complete
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                // Simple navigation without animation delays
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     navigateToAttendanceList = true
                 }
             }
         }
         .onChange(of: viewModel.processingComplete) { complete in
             if complete && !viewModel.showOpenAIOption && viewModel.errorMessage == nil {
-                print("Processing complete, navigating to attendance list")
-                // Add a longer delay to ensure all UI updates and transitions are complete
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                // Simple navigation without animation delays
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     navigateToAttendanceList = true
                 }
             }
         }
-        // Add this onReceive to automatically navigate after successful processing
         .onAppear {
-            // Debug print to verify this view is appearing
-            print("ImageProcessingView appeared")
-            
             // Reset navigation state when view appears
             navigateToAttendanceList = false
         }
         .onReceive(viewModel.$isProcessing) { isProcessing in
-            print("Processing status changed: \(isProcessing)")
             if !isProcessing && !viewModel.showOpenAIOption && viewModel.errorMessage == nil && viewModel.selectedImage != nil && viewModel.processingComplete {
-                print("Navigating to attendance list")
-                // Add a longer delay to ensure all UI updates and transitions are complete
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                // Simple navigation without animation delays
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     navigateToAttendanceList = true
                 }
             }
         }
-        .navigationTitle("Process Attendance")
     }
 }
 

@@ -100,6 +100,7 @@ struct ImagePickerView: View {
     @State private var showImagePicker = false
     @State private var showCameraPicker = false
     @State private var sourceType: SourceType = .photoLibrary
+    @State private var showTip = false
     
     enum SourceType {
         case photoLibrary
@@ -107,61 +108,114 @@ struct ImagePickerView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack {
+            // Top spacing to push content down slightly
+            Spacer().frame(height: 20)
+            
+            // Option buttons in a horizontal row
+            HStack(spacing: 60) {
+                // Gallery Button
+                Button(action: {
+                    sourceType = .photoLibrary
+                    showImagePicker = true
+                }) {
+                    VStack(spacing: 8) {
+                        Image(systemName: "photo")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                            .frame(width: 50, height: 50)
+                            .background(Color.blue)
+                            .clipShape(Circle())
+                        
+                        Text("Gallery")
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                    }
+                }
+                
+                // Camera Button
+                Button(action: {
+                    sourceType = .camera
+                    showCameraPicker = true
+                }) {
+                    VStack(spacing: 8) {
+                        Image(systemName: "camera")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                            .frame(width: 50, height: 50)
+                            .background(Color.blue)
+                            .clipShape(Circle())
+                        
+                        Text("Camera")
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+            .padding(.top, 20)
+            
+            // Image Preview Area (centered in the screen)
             if let image = selectedImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
                     .frame(maxHeight: 300)
-                    .cornerRadius(12)
-                    .padding()
+                    .cornerRadius(8)
+                    .padding(.horizontal)
+                    .padding(.top, 40)
             } else {
+                Spacer().frame(height: 60)
+                
                 Image(systemName: "photo.fill")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 100, height: 100)
+                    .frame(width: 60, height: 60)
+                    .foregroundColor(.secondary.opacity(0.3))
+                    .padding(.bottom, 12)
+                
+                Text("No Image Selected")
+                    .font(.headline)
                     .foregroundColor(.secondary)
-                    .padding()
+                    .padding(.bottom, 8)
+                    
+                Text("Take a photo or select an image of your attendance list")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
             }
             
-            HStack(spacing: 30) {
+            Spacer()
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Upload Attendance")
+                    .font(.title2)
+                    .fontWeight(.bold)
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    sourceType = .photoLibrary
-                    showImagePicker = true
+                    showTip.toggle()
                 }) {
-                    VStack {
-                        Image(systemName: "photo.on.rectangle")
-                            .font(.system(size: 30))
-                        Text("Gallery")
-                            .font(.caption)
-                    }
-                    .frame(width: 100, height: 80)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(10)
-                }
-                
-                Button(action: {
-                    sourceType = .camera
-                    showCameraPicker = true
-                }) {
-                    VStack {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 30))
-                        Text("Camera")
-                            .font(.caption)
-                    }
-                    .frame(width: 100, height: 80)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(10)
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.blue)
                 }
             }
-            .padding()
         }
         .sheet(isPresented: $showImagePicker) {
             PHPickerRepresentable(image: $selectedImage)
         }
         .sheet(isPresented: $showCameraPicker) {
             CameraPickerRepresentable(image: $selectedImage)
+        }
+        .alert(isPresented: $showTip) {
+            Alert(
+                title: Text("Tips for Best Results"),
+                message: Text("Ensure the list is clear, well-lit, and student names are legible for best recognition results."),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 } 

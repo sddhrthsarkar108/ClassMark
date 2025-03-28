@@ -2,9 +2,16 @@ import SwiftUI
 import Combine
 import Vision
 import UIKit
+import Foundation
 
 // Remove the exported imports as they're causing issues
 // Instead we'll make sure all Swift files are included in the build
+
+// Enum to track API key status
+enum APIKeyStatus {
+    case notSet
+    case set
+}
 
 struct ContentView: View {
     @StateObject private var viewModel = AttendanceViewModel()
@@ -13,6 +20,13 @@ struct ContentView: View {
     @State private var previousTab: Int = 0
     @State private var showingClearRecordsAlert = false
     @State private var recordsCleared = false
+    @State private var selectedTimePeriod: AttendanceTimePeriod = .month
+    @State private var enableOpenAI = false
+    @State private var showingAPIKeyInput = false
+    @State private var apiKeyInput = ""
+    @State private var apiKeyStatus: APIKeyStatus = .notSet
+    @State private var showingRemoveKeyAlert = false
+    @State private var apiKeySaved = false
     
     // Create a computed property for the image binding to simplify the complex expression
     private var imageBinding: Binding<UIImage?> {
@@ -31,6 +45,49 @@ struct ContentView: View {
                 }
             }
         )
+    }
+    
+    // List of available OpenAI models
+    private let openAIModels = ["gpt-4-turbo", "gpt-4-vision-preview", "gpt-4o"]
+    @State private var selectedModel = "gpt-4-turbo" // Default to match Python script
+    
+    // Method to handle saving the API key
+    private func saveAPIKey() {
+        do {
+            try OpenAIService.shared.saveAPIKey(apiKeyInput)
+            apiKeyStatus = .set
+            apiKeyInput = ""
+            apiKeySaved = true
+            
+            // Save selected model to UserDefaults
+            UserDefaults.standard.set(selectedModel, forKey: "openai_model")
+            
+            // Auto-dismiss success message after 3 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                apiKeySaved = false
+            }
+        } catch {
+            print("Failed to save API key: \(error)")
+            // Handle error - perhaps show an alert
+        }
+    }
+    
+    // Method to remove the API key
+    private func removeAPIKey() {
+        OpenAIService.shared.deleteAPIKey()
+        apiKeyStatus = .notSet
+        apiKeyInput = ""
+    }
+    
+    // Method to check if API key exists and set status appropriately
+    private func checkAPIKeyStatus() {
+        apiKeyStatus = OpenAIService.shared.hasAPIKey() ? .set : .notSet
+        
+        // Load saved model preference
+        if let savedModel = UserDefaults.standard.string(forKey: "openai_model"),
+           openAIModels.contains(savedModel) {
+            selectedModel = savedModel
+        }
     }
     
     var body: some View {
@@ -67,39 +124,149 @@ struct ContentView: View {
             }
             .tag(2)
             
-            // Debug tab to show extracted text
+            // Settings tab (replacing Debug tab)
             NavigationView {
                 VStack {
-                    Text("Debug Information")
-                        .font(.headline)
-                        .padding()
-                    
                     List {
-                        Section(header: Text("Extracted Names")) {
-                            if extractedText.isEmpty {
-                                Text("No names extracted yet")
-                                    .foregroundColor(.gray)
-                            } else {
-                                ForEach(extractedText, id: \.self) { text in
-                                    Text(text)
+                        Section(header: Text("History View Settings")
+                                .padding(.top, 4), 
+                               footer: Text("Select how much history you want to see by default when opening the History tab.")) {
+                            HStack {
+                                Text("Default Time Period")
+                                Spacer()
+                                Picker("Default Time Period", selection: $selectedTimePeriod) {
+                                    ForEach(AttendanceTimePeriod.allCases) { period in
+                                        Text(period.rawValue).tag(period)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .labelsHidden()
+                                .frame(width: 120, alignment: .trailing)
+                                .onChange(of: selectedTimePeriod) { newValue in
+                                    // Save to UserDefaults for persistence
+                                    UserDefaults.standard.set(newValue.rawValue, forKey: "defaultTimePeriod")
+                                    
+                                    // Notify the history view of the change
+                                    NotificationCenter.default.post(
+                                        name: NSNotification.Name("TimePreferenceChanged"),
+                                        object: newValue
+                                    )
                                 }
                             }
                         }
                         
-                        Section(header: Text("Recognition Status")) {
-                            Text("Processing: \(viewModel.isProcessing ? "Yes" : "No")")
-                            Text("Error: \(viewModel.errorMessage ?? "None")")
-                            Text("OpenAI Option Shown: \(viewModel.showOpenAIOption ? "Yes" : "No")")
-                            Text("Processing Complete: \(viewModel.processingComplete ? "Yes" : "No")")
+                        Section(header: Text("OCR Settings")
+                                .padding(.top, 4), 
+                               footer: Text("When enabled, OpenAI will be used automatically to improve recognition when the built-in text recognition doesn't perform well.")) {
+                            Toggle("Use OpenAI for OCR", isOn: $enableOpenAI)
+                                .onChange(of: enableOpenAI) { newValue in
+                                    viewModel.setOpenAIEnabled(newValue)
+                                    
+                                    // If OpenAI is being enabled, check if we need to set an API key
+                                    if newValue && !OpenAIService.shared.hasAPIKey() {
+                                        showingAPIKeyInput = true
+                                    }
+                                }
+                            
+                            if enableOpenAI {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    // Model selector dropdown
+                                    HStack {
+                                        Text("Model")
+                                        Spacer()
+                                        Picker("Model", selection: $selectedModel) {
+                                            ForEach(openAIModels, id: \.self) { model in
+                                                Text(model).tag(model)
+                                            }
+                                        }
+                                        .pickerStyle(.menu)
+                                        .labelsHidden()
+                                        .frame(width: 200, alignment: .trailing)
+                                    }
+                                    .padding(.vertical, 4)
+                                    
+                                    // If no API key is set, show input field
+                                    if apiKeyStatus == .notSet {
+                                        Text("Enter your OpenAI API Key")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                        
+                                        SecureField("API Key", text: $apiKeyInput)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                            .autocapitalization(.none)
+                                            .disableAutocorrection(true)
+                                            .padding(.vertical, 4)
+                                        
+                                        HStack {
+                                            Button("Save API Key") {
+                                                saveAPIKey()
+                                            }
+                                            .disabled(apiKeyInput.isEmpty)
+                                            .buttonStyle(.borderedProminent)
+                                            
+                                            Spacer()
+                                            
+                                            Link("Get API Key", destination: URL(string: "https://platform.openai.com/api-keys")!)
+                                                .font(.footnote)
+                                                .foregroundColor(.blue)
+                                        }
+                                    } else {
+                                        // If API key is already set
+                                        HStack {
+                                            Text("API Key: ")
+                                                .foregroundColor(.secondary)
+                                            
+                                            Text("•••••••••••••••••••")
+                                                .foregroundColor(.secondary)
+                                            
+                                            Spacer()
+                                            
+                                            Button(action: {
+                                                showingAPIKeyInput = true
+                                                apiKeyStatus = .notSet
+                                                apiKeyInput = ""
+                                            }) {
+                                                Text("Change")
+                                                    .font(.footnote)
+                                                    .foregroundColor(.blue)
+                                            }
+                                        }
+                                        .padding(.vertical, 4)
+                                        
+                                        Button(action: {
+                                            showingRemoveKeyAlert = true
+                                        }) {
+                                            HStack {
+                                                Image(systemName: "key.slash.fill")
+                                                    .font(.system(size: 12))
+                                                Text("Remove API Key")
+                                                    .font(.subheadline)
+                                            }
+                                            .foregroundColor(.red)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                    
+                                    // Success message when API key is saved
+                                    if apiKeySaved {
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.green)
+                                            Text("API Key saved successfully!")
+                                                .foregroundColor(.green)
+                                                .font(.footnote)
+                                        }
+                                        .padding(.top, 4)
+                                        .padding(.bottom, 2)
+                                    }
+                                }
+                                .padding(.vertical, 5)
+                            }
                         }
                         
-                        Section(header: Text("Debug Actions")) {
-                            Button("Force Navigation to List") {
-                                selectedTab = 1
-                            }
-                            .buttonStyle(.bordered)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            
+                        Section(header: Text("Data Management")
+                                .padding(.top, 4)) {
                             Button(action: {
                                 showingClearRecordsAlert = true
                             }) {
@@ -108,10 +275,10 @@ struct ContentView: View {
                                         .foregroundColor(.red)
                                     Text("Delete All Attendance Records")
                                         .foregroundColor(.red)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                             }
-                            .buttonStyle(.bordered)
-                            .frame(maxWidth: .infinity, alignment: .center)
+                            .buttonStyle(PlainButtonStyle())
                             
                             if recordsCleared {
                                 HStack {
@@ -128,9 +295,26 @@ struct ContentView: View {
                                 }
                             }
                         }
+                        
+                        Section(header: Text("About")
+                                .padding(.top, 4)) {
+                            HStack {
+                                Text("Version")
+                                Spacer()
+                                Text("1.0.0")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
                     }
                 }
-                .navigationTitle("Debug")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Text("Settings")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                    }
+                }
                 .alert("Delete All Attendance Records?", isPresented: $showingClearRecordsAlert) {
                     Button("Yes, Delete All", role: .destructive) {
                         let dataManager = DataManager.shared
@@ -145,9 +329,30 @@ struct ContentView: View {
                 } message: {
                     Text("This will permanently delete ALL attendance records from the app. You cannot undo this action.")
                 }
+                .alert("Remove API Key?", isPresented: $showingRemoveKeyAlert) {
+                    Button("Yes, Remove", role: .destructive) {
+                        removeAPIKey()
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("This will remove your OpenAI API key. You'll need to enter it again to use OpenAI for text recognition.")
+                }
+                .onAppear {
+                    // Load saved time period preference
+                    if let savedPeriod = UserDefaults.standard.string(forKey: "defaultTimePeriod"),
+                       let period = AttendanceTimePeriod.allCases.first(where: { $0.rawValue == savedPeriod }) {
+                        selectedTimePeriod = period
+                    }
+                    
+                    // Load OpenAI setting
+                    enableOpenAI = viewModel.isOpenAIEnabled
+                    
+                    // Check if API key exists
+                    checkAPIKeyStatus()
+                }
             }
             .tabItem {
-                Label("Debug", systemImage: "terminal")
+                Label("Settings", systemImage: "gear")
             }
             .tag(3)
         }
@@ -206,6 +411,11 @@ struct ContentView: View {
             print("Navigating to History screen")
             // Navigate to the history tab
             selectedTab = 2
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToSettings"))) { _ in
+            print("Navigating to Settings screen")
+            // Navigate to the settings tab
+            selectedTab = 3
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AttendanceSaved"))) { _ in
             print("Attendance was saved successfully")

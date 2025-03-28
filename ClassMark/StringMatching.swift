@@ -2,6 +2,24 @@ import Foundation
 
 struct StringMatching {
     
+    // Clean a name by removing numbering, special characters and standardizing format
+    static func cleanName(_ name: String) -> String {
+        // Remove numbering patterns (e.g., "1.", "2)", "#3", etc.)
+        var cleaned = name.replacingOccurrences(of: "^\\s*\\d+[.)]\\s*", with: "", options: .regularExpression)
+        
+        // Remove any remaining non-alphabetic characters except spaces
+        cleaned = cleaned.components(separatedBy: CharacterSet(charactersIn: " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ").inverted)
+                        .joined(separator: " ")
+        
+        // Remove multiple spaces
+        cleaned = cleaned.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        
+        // Trim whitespace
+        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        return cleaned
+    }
+    
     // Calculate the Levenshtein distance between two strings
     static func levenshteinDistance(between a: String, and b: String) -> Int {
         let aCount = a.count
@@ -54,8 +72,8 @@ struct StringMatching {
     static func findBestMatch(for name: String, in candidates: [String]) -> (string: String, score: Double)? {
         guard !candidates.isEmpty else { return nil }
         
-        // Normalize the input name
-        let normalizedName = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        // Normalize and clean the input name
+        let normalizedName = cleanName(name).lowercased()
         
         // Find the best match
         var bestMatch = candidates[0]
@@ -74,8 +92,8 @@ struct StringMatching {
     
     // Find all potential matches above a threshold
     static func findAllMatches(for name: String, in candidates: [String], threshold: Double = 0.7) -> [(string: String, score: Double)] {
-        // Normalize the input name
-        let normalizedName = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        // Normalize and clean the input name
+        let normalizedName = cleanName(name).lowercased()
         
         // Calculate scores and filter by threshold
         return candidates.map { candidate in

@@ -189,8 +189,20 @@ class DataManager {
         return formatter.string(from: date)
     }
     
-    func exportAttendanceAsCSV() -> String {
-        let records = getAttendanceRecords()
+    func exportAttendanceAsCSV(filterByDateRange dateRange: ClosedRange<Date>? = nil) -> String {
+        let records: [AttendanceRecord]
+        
+        // If date range is provided, filter the records
+        if let range = dateRange {
+            records = getAttendanceRecords().filter { record in
+                return record.date >= range.lowerBound && record.date <= range.upperBound
+            }
+            print("Exporting CSV for date range: \(getDateString(from: range.lowerBound)) to \(getDateString(from: range.upperBound))")
+        } else {
+            records = getAttendanceRecords()
+            print("Exporting CSV for all records")
+        }
+        
         let students = getStudents()
         
         // Create a dictionary for faster student lookup
@@ -229,8 +241,48 @@ class DataManager {
         return csv
     }
     
-    func saveCSVToFile() -> URL? {
-        let csv = exportAttendanceAsCSV()
+    // Export student attendance report summary as CSV
+    func exportStudentReportAsCSV(reportData: [[String: Any]], dateRange: ClosedRange<Date>) -> String {
+        // Get formatted date range for the report header
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        let startDateStr = dateFormatter.string(from: dateRange.lowerBound)
+        let endDateStr = dateFormatter.string(from: dateRange.upperBound)
+        
+        // Create CSV header with metadata
+        var csv = "Student Attendance Report\n"
+        csv += "Period:,\(startDateStr) to \(endDateStr)\n"
+        csv += "Generated:,\(dateFormatter.string(from: Date()))\n\n"
+        
+        // Column headers
+        csv += "Name,Roll Number,Present Days,Absent Days,Total Days,Attendance Rate (%)\n"
+        
+        // Add data for each student report
+        for report in reportData {
+            guard 
+                let name = report["name"] as? String,
+                let rollNumber = report["rollNumber"] as? String,
+                let presentDays = report["presentDays"] as? Int,
+                let totalDays = report["totalDays"] as? Int,
+                let attendanceRate = report["attendanceRate"] as? Double
+            else { continue }
+            
+            let absentDays = totalDays - presentDays
+            let attendancePercentage = Int(attendanceRate * 100)
+            
+            csv += "\(name),"
+            csv += "\(rollNumber),"
+            csv += "\(presentDays),"
+            csv += "\(absentDays),"
+            csv += "\(totalDays),"
+            csv += "\(attendancePercentage)\n"
+        }
+        
+        return csv
+    }
+    
+    func saveCSVToFile(filterByDateRange dateRange: ClosedRange<Date>? = nil) -> URL? {
+        let csv = exportAttendanceAsCSV(filterByDateRange: dateRange)
         
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -247,6 +299,29 @@ class DataManager {
             return fileURL
         } catch {
             print("Error saving CSV: \(error)")
+            return nil
+        }
+    }
+    
+    // Save student report CSV to file
+    func saveStudentReportCSV(reportData: [[String: Any]], dateRange: ClosedRange<Date>) -> URL? {
+        let csv = exportStudentReportAsCSV(reportData: reportData, dateRange: dateRange)
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let filename = "student_report_\(dateFormatter.string(from: Date())).csv"
+        
+        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        
+        let fileURL = documentDirectory.appendingPathComponent(filename)
+        
+        do {
+            try csv.write(to: fileURL, atomically: true, encoding: .utf8)
+            return fileURL
+        } catch {
+            print("Error saving student report CSV: \(error)")
             return nil
         }
     }

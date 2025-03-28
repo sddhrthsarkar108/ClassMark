@@ -103,14 +103,16 @@ class TextRecognitionService {
         
         // Process each extracted text line
         for text in extractedTexts {
-            // Find all potential matches above threshold
-            let potentialMatches = StringMatching.findAllMatches(for: text, in: studentNames, threshold: 0.6)
+            // Find all potential matches above minimum threshold
+            let potentialMatches = StringMatching.findAllMatches(for: text, in: studentNames, threshold: 0.5)
             
             // Find the best match if any exists
             if let bestMatch = potentialMatches.first {
                 // Find corresponding student roll number
                 if let student = students.first(where: { $0.name == bestMatch.string }) {
                     matchedRollNumbers[student.rollNumber] = bestMatch.score
+                    // Log match score for debugging
+                    print("Match: '\(text)' -> '\(bestMatch.string)' with score: \(String(format: "%.2f", bestMatch.score * 100))%")
                 }
             }
         }
@@ -125,8 +127,16 @@ class TextRecognitionService {
             return true
         }
         
+        // Using a single confidence threshold of 0.75 (matching AttendanceViewModel)
+        let threshold = 0.75
+        
         // If more than half the matches have low confidence scores
-        let lowConfidenceMatches = matchResult.filter { $0.value < 0.75 }
-        return Double(lowConfidenceMatches.count) / Double(matchResult.count) > 0.5
+        let lowConfidenceMatches = matchResult.filter { $0.value < threshold }
+        let lowConfidenceRatio = Double(lowConfidenceMatches.count) / Double(matchResult.count)
+        
+        // Log for debugging
+        print("Low confidence matches: \(lowConfidenceMatches.count)/\(matchResult.count) (\(String(format: "%.2f", lowConfidenceRatio * 100))%)")
+        
+        return lowConfidenceRatio > 0.5
     }
 } 
